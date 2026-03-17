@@ -1,0 +1,28 @@
+cd /path/to/sparse-imaging
+source ./.setup.sh
+export ROOT_FILE=/path/to/events.root
+export TREE=events
+export SHARDS_DIR=$PWD/shards
+export CHECKPOINT_PATH=$PWD/checkpoints/checkpoint.pt
+export LOSS_LOG_PATH=$PWD/loss.tsv
+export H=512
+export W=512
+export THRESH=0.0
+export SHARD_EVENTS=2048
+export CHUNK_EVENTS=256
+mkdir -p "$SHARDS_DIR" "$(dirname "$CHECKPOINT_PATH")"
+python -u process.py
+export BACKBONE=small
+export EMBED_DIM=256
+export BATCH_SIZE=32
+export NUM_WORKERS=4
+export MAX_STEPS=10000
+export LR0=0.01
+export WEIGHT_DECAY=1e-4
+export MOMENTUM=0.9
+export POLY_POWER=0.9
+export VAL_FRACTION=0.1
+export VAL_EVERY=1000
+export VAL_BATCHES=25
+export CHECKPOINT_EVERY=1000
+python -u train.py
