@@ -1,39 +1,27 @@
-echo "Activating Conda environment..."
-source /gluster/data/dune/niclane/miniforge/etc/profile.d/conda.sh
-conda activate /gluster/data/dune/niclane/miniforge/envs/hep-sparse-env
-
-echo "Checking CUDA avaliability..."
-python -c "import torch; print('cuda_available=', torch.cuda.is_available())"
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH}"
-
-
-
-echo "Setting-up config variables..."
-export ROOT_FILE="/gluster/data/dune/niclane/events.root"
-export TREE="events"
-
-export SHARDS_DIR="/gluster/data/dune/niclane/sparse_shards"
-export SHARDS_OUT="${SHARDS_DIR}"
-
-export H=512
-export W=512
-export THRESH=0.0
-export ADC_SIGNLOG=0
-
-export SHARD_EVENTS=2048
-export CHUNK_EVENTS=64
-
-export BATCH=32
-export EPOCHS=20
-export LR=3e-3
-export WEIGHT_DECAY=1e-4
-export NUM_WORKERS=8
-export SEED=12345
-export VAL_FRAC=0.1
-export OUT="checkpoint.pt"
-
-export BASE_FILTERS=32
-export NUM_STRIDES=4
-export DROPOUT=0.2
+export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
+export ROOT_FILE="${ROOT_FILE:-${REPO_ROOT}/events.root}"
+export TREE="${TREE:-events}"
+export SHARDS_DIR="${SHARDS_DIR:-${REPO_ROOT}/shards}"
+export H="${H:-512}"
+export W="${W:-512}"
+export THRESH="${THRESH:-0.0}"
+export SHARD_EVENTS="${SHARD_EVENTS:-2048}"
+export CHUNK_EVENTS="${CHUNK_EVENTS:-256}"
+export SEED="${SEED:-123}"
+export BATCH_SIZE="${BATCH_SIZE:-32}"
+export NUM_WORKERS="${NUM_WORKERS:-4}"
+export MAX_STEPS="${MAX_STEPS:-10000}"
+export LR0="${LR0:-0.01}"
+export WEIGHT_DECAY="${WEIGHT_DECAY:-1e-4}"
+export MOMENTUM="${MOMENTUM:-0.9}"
+export POLY_POWER="${POLY_POWER:-0.9}"
+export VAL_FRACTION="${VAL_FRACTION:-0.1}"
+export VAL_EVERY="${VAL_EVERY:-2000}"
+export VAL_BATCHES="${VAL_BATCHES:-50}"
+export BACKBONE="${BACKBONE:-small}"
+export EMBED_DIM="${EMBED_DIM:-256}"
+export CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-1000}"
+export CHECKPOINT_PATH="${CHECKPOINT_PATH:-${REPO_ROOT}/checkpoints/checkpoint.pt}"
+export LOSS_LOG_PATH="${LOSS_LOG_PATH:-${REPO_ROOT}/loss.tsv}"
+python -c "import torch; print('cuda_available=', torch.cuda.is_available())"

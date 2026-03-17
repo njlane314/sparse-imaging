@@ -1,47 +1,53 @@
 import os
 
 
-def _env(name, default, cast):
-    v = os.environ.get(name)
-    return default if v is None else cast(v)
+def _first(*names):
+    for name in names:
+        value = os.environ.get(name)
+        if value is not None:
+            return value
+    return None
 
 
-ROOT_FILE = os.environ.get("ROOT_FILE", "/gluster/data/dune/niclane/events.root")
-TREE = os.environ.get("TREE", "events")
-BR_U = os.environ.get("BR_U", "detector_image_u")
-BR_V = os.environ.get("BR_V", "detector_image_v")
-BR_W = os.environ.get("BR_W", "detector_image_w")
-BR_Y = os.environ.get("BR_Y", "is_signal")
-BR_WGT = os.environ.get("BR_WGT", "w_nominal")
-STRICT_SHAPES = bool(int(os.environ.get("STRICT_SHAPES", "0")))
+def _env(default, cast, *names):
+    value = _first(*names)
+    return default if value is None else cast(value)
 
-H = _env("H", 512, int)
-W = _env("W", 512, int)
 
-THRESH = _env("THRESH", 0.0, float)
-
-BACKBONE = os.environ.get("BACKBONE", "small")
-EMBED_DIM = _env("EMBED_DIM", 256, int)
-SHARD_EVENTS = _env("SHARD_EVENTS", 2048, int)
-CHUNK_EVENTS = _env("CHUNK_EVENTS", 256, int)
-MAX_BAD_EVENT_LOG = _env("MAX_BAD_EVENT_LOG", 25, int)
-
-UPROOT_DECOMP_WORKERS = _env("UPROOT_DECOMP_WORKERS", 2, int)
-FAULTHANDLER_TIMEOUT = _env("FAULTHANDLER_TIMEOUT", 120, int)
-
-SHARDS_DIR = os.environ.get("SHARDS_DIR", os.environ.get("PROCESS_OUT_DIR", "shards"))
+ROOT_FILE = _first("ROOT_FILE") or "events.root"
+TREE = _first("TREE") or "events"
+BR_U = _first("BR_U") or "detector_image_u"
+BR_V = _first("BR_V") or "detector_image_v"
+BR_W = _first("BR_W") or "detector_image_w"
+BR_Y = _first("BR_Y") or "is_signal"
+BR_WGT = _first("BR_WGT") or "w_nominal"
+STRICT_SHAPES = bool(_env(0, int, "STRICT_SHAPES"))
+H = _env(512, int, "H")
+W = _env(512, int, "W")
+THRESH = _env(0.0, float, "THRESH")
+BACKBONE = _first("BACKBONE") or "small"
+EMBED_DIM = _env(256, int, "EMBED_DIM")
+SHARD_EVENTS = _env(2048, int, "SHARD_EVENTS")
+CHUNK_EVENTS = _env(256, int, "CHUNK_EVENTS")
+MAX_BAD_EVENT_LOG = _env(25, int, "MAX_BAD_EVENT_LOG")
+UPROOT_DECOMP_WORKERS = _env(2, int, "UPROOT_DECOMP_WORKERS")
+FAULTHANDLER_TIMEOUT = _env(120, int, "FAULTHANDLER_TIMEOUT")
+SHARDS_DIR = _first("SHARDS_DIR", "PROCESS_OUT_DIR", "SHARDS_OUT") or "shards"
 PROCESS_OUT_DIR = SHARDS_DIR
-SEED = _env("SEED", 123, int)
-BATCH_SIZE = _env("BATCH_SIZE", 32, int)
-NUM_WORKERS = _env("NUM_WORKERS", 4, int)
-MAX_STEPS = _env("MAX_STEPS", 10_000, int)
-LR0 = _env("LR0", 0.01, float)
-WEIGHT_DECAY = _env("WEIGHT_DECAY", 1e-4, float)
-MOMENTUM = _env("MOMENTUM", 0.9, float)
-POLY_POWER = _env("POLY_POWER", 0.9, float)
-VAL_FRACTION = _env("VAL_FRACTION", 0.1, float)
-VAL_EVERY = _env("VAL_EVERY", 2000, int)
-VAL_BATCHES = _env("VAL_BATCHES", 50, int)
-CHECKPOINT_EVERY = _env("CHECKPOINT_EVERY", 1000, int)
-
-CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", "checkpoints/checkpoint.pt")
+SEED = _env(123, int, "SEED")
+BATCH_SIZE = _env(32, int, "BATCH_SIZE", "BATCH")
+NUM_WORKERS = _env(4, int, "NUM_WORKERS")
+MAX_STEPS = _env(10000, int, "MAX_STEPS")
+LR0 = _env(0.01, float, "LR0", "LR")
+WEIGHT_DECAY = _env(1e-4, float, "WEIGHT_DECAY")
+MOMENTUM = _env(0.9, float, "MOMENTUM")
+POLY_POWER = _env(0.9, float, "POLY_POWER")
+VAL_FRACTION = _env(0.1, float, "VAL_FRACTION", "VAL_FRAC")
+VAL_EVERY = _env(2000, int, "VAL_EVERY")
+VAL_BATCHES = _env(50, int, "VAL_BATCHES")
+VAL_CACHE_BATCHES = _env(0, int, "VAL_CACHE_BATCHES")
+CHECKPOINT_EVERY = _env(1000, int, "CHECKPOINT_EVERY")
+CHECKPOINT_PATH = _first("CHECKPOINT_PATH", "OUT") or "checkpoints/checkpoint.pt"
+LOSS_LOG_PATH = _first("LOSS_LOG_PATH") or "loss.tsv"
+LOG_FLUSH_EVERY = _env(50, int, "LOG_FLUSH_EVERY")
+TRAIN_DIAGNOSTICS_EVERY = _env(0, int, "TRAIN_DIAGNOSTICS_EVERY")
