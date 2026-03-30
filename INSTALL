@@ -1,6 +1,19 @@
 Sparse Imaging Install Notes
 ============================
 
+This repository trains a sparse MinkowskiEngine classifier on three detector-image planes stored in a ROOT file. The current code path is:
+
+1. Read dense U/V/W detector planes plus labels and weights from a ROOT tree.
+2. Convert each event into a sparse representation and write `shard_*.pt` plus `index.pt`.
+3. Train a binary classifier with class-balanced batches and late fusion across the three planes.
+
+The current entry points are the repo-root scripts:
+
+- `process.py` for shard creation
+- `train.py` for training
+
+This is different from the older layout that used `scripts/prepare.py`, `scripts/train.py`, and `scripts/overfit_check.py`.
+
 This repository has two separate use cases:
 
 1. Local sanity checks and light CPU-side preprocessing.
@@ -22,6 +35,26 @@ The dependency stack here is pinned around:
 
 - PyTorch `2.1.2`
 - MinkowskiEngine `v0.5.4`
+
+
+Current Pipeline Notes
+----------------------
+
+The legacy documentation mostly still describes the high-level idea correctly, but the current implementation has a few important differences:
+
+- Sparse coordinates are stored as `(plane, y, x)` where `plane` is `0/1/2` for `u/v/w`.
+- Sparse features are currently 2-dimensional: `(occupancy, log_charge)`.
+- The charge transform is the unsigned form `log1p(max(v, 0))`.
+- The current code does not expose the older `ADC_SIGNLOG` option.
+- Training uses class-balanced batches and an event-level binary loss.
+- Validation is done every `VAL_EVERY` steps over a fixed number of batches.
+
+The core repo modules are:
+
+- `process.py`: ROOT ingestion, sparsification, sharding, and `index.pt` creation
+- `dataset.py`: shard dataset, balanced batch sampler, and sparse collation
+- `model.py`: per-plane sparse U-ResNet encoder with late fusion
+- `train.py`: training loop, validation loop, and checkpoint saving
 
 
 Local CPU Setup
@@ -106,7 +139,7 @@ Do not use `--force_cpu` for the cluster GPU install.
 Repo Workflow
 -------------
 
-The repo workflow is encoded in `.workflow.cmds`:
+The repo workflow is encoded in `.workflow.cmds` and is currently:
 
 1. Set the input ROOT file and output locations.
 2. Run preprocessing:
@@ -118,6 +151,12 @@ The repo workflow is encoded in `.workflow.cmds`:
        python3 -u train.py
 
 The helper script `.setup.sh` provides defaults for the main environment variables.
+
+There is no current in-repo equivalent of the older `scripts/overfit_check.py`. The nearest local verification path in this tree is:
+
+    python3 check_local.py
+
+and the nearest runtime smoke test is a small Noether-side import or training initialization run.
 
 
 Important Environment Variables
