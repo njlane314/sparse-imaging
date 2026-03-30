@@ -11,7 +11,7 @@ export THRESH=0.0
 export SHARD_EVENTS=2048
 export CHUNK_EVENTS=256
 mkdir -p "$SHARDS_DIR" "$(dirname "$CHECKPOINT_PATH")"
-python -u process.py
+python3 -u process.py
 export BACKBONE=small
 export EMBED_DIM=256
 export BATCH_SIZE=32
@@ -25,4 +25,4 @@ export VAL_FRACTION=0.1
 export VAL_EVERY=1000
 export VAL_BATCHES=25
 export CHECKPOINT_EVERY=1000
-python -u train.py
+python3 -u train.py

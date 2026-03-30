@@ -24,4 +24,7 @@ export EMBED_DIM="${EMBED_DIM:-256}"
 export CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-1000}"
 export CHECKPOINT_PATH="${CHECKPOINT_PATH:-${REPO_ROOT}/checkpoints/checkpoint.pt}"
 export LOSS_LOG_PATH="${LOSS_LOG_PATH:-${REPO_ROOT}/loss.tsv}"
-python -c "import torch; print('cuda_available=', torch.cuda.is_available())"
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    python3 -c "import torch; print('cuda_available=', torch.cuda.is_available())"
+fi

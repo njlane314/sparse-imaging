@@ -1,0 +1,149 @@
+Sparse Imaging Install Notes
+============================
+
+This repository has two separate use cases:
+
+1. Local sanity checks and light CPU-side preprocessing.
+2. Full training on the Noether GPU cluster.
+
+There is no traditional compile step for this repo. The closest local validation is:
+
+    python3 check_local.py
+
+That script does syntax checks, shell checks, config/workflow consistency checks, and a few logic smoke tests without requiring `numpy`, `torch`, `uproot`, or `MinkowskiEngine`.
+
+
+Recommended Python Version
+--------------------------
+
+Use Python 3.10 for installation work unless the cluster environment already dictates a compatible version.
+
+The dependency stack here is pinned around:
+
+- PyTorch `2.1.2`
+- MinkowskiEngine `v0.5.4`
+
+
+Local CPU Setup
+---------------
+
+If you only want a local repo sanity environment, the Dockerfile is the easiest path:
+
+    docker build -t sparse-imaging-cpu .
+
+That image:
+
+- installs CPU PyTorch, `numpy`, and `uproot`
+- builds MinkowskiEngine in CPU mode
+- runs `python3 check_local.py` during image build
+
+Open a shell in the container with:
+
+    docker run --rm -it -v "$PWD:/workspace" -w /workspace sparse-imaging-cpu bash
+
+Inside the container:
+
+    source ./.setup.sh
+    python3 check_local.py
+
+If you have a local ROOT file and want to run preprocessing in the container:
+
+    source ./.setup.sh
+    export ROOT_FILE=/workspace/events.root
+    mkdir -p "$SHARDS_DIR"
+    python3 -u process.py
+
+The Docker image is meant for local validation and CPU-side work. It is not the intended training environment for Noether GPUs.
+
+
+Native Local Install
+--------------------
+
+If you want a local virtual environment instead of Docker:
+
+    python3.10 -m venv .venv
+    source .venv/bin/activate
+    python -m pip install --upgrade pip setuptools wheel ninja
+    python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.1.2
+    python -m pip install numpy uproot
+    git clone --depth 1 --branch v0.5.4 https://github.com/NVIDIA/MinkowskiEngine.git /tmp/MinkowskiEngine
+    cd /tmp/MinkowskiEngine
+    python setup.py install --blas=openblas --force_cpu
+    cd -
+    python3 check_local.py
+
+
+Noether GPU Cluster Setup
+-------------------------
+
+Training is expected to happen on Noether, not on the local machine.
+
+The exact commands depend on how Noether provides Python, CUDA, and PyTorch. The important constraint is that PyTorch and MinkowskiEngine must be built in the same environment you intend to train in.
+
+A typical cluster-side setup is:
+
+1. Load the site-provided Python/CUDA/module environment required by Noether.
+2. Create and activate a virtual environment.
+3. Install base Python packages:
+
+       python -m pip install --upgrade pip setuptools wheel ninja numpy uproot
+
+4. Install a GPU-enabled PyTorch build that matches the cluster CUDA stack.
+5. Build MinkowskiEngine against that exact environment:
+
+       git clone --depth 1 --branch v0.5.4 https://github.com/NVIDIA/MinkowskiEngine.git
+       cd MinkowskiEngine
+       python setup.py install --blas=openblas
+
+6. Return to this repo and run:
+
+       source ./.setup.sh
+       python3 check_local.py
+
+Do not use `--force_cpu` for the cluster GPU install.
+
+
+Repo Workflow
+-------------
+
+The repo workflow is encoded in `.workflow.cmds`:
+
+1. Set the input ROOT file and output locations.
+2. Run preprocessing:
+
+       python3 -u process.py
+
+3. Run training:
+
+       python3 -u train.py
+
+The helper script `.setup.sh` provides defaults for the main environment variables.
+
+
+Important Environment Variables
+-------------------------------
+
+- `ROOT_FILE`: input ROOT file
+- `TREE`: ROOT tree name
+- `SHARDS_DIR`: directory for sparse shard output
+- `CHECKPOINT_PATH`: training checkpoint prefix path
+- `LOSS_LOG_PATH`: TSV loss log output
+- `H`, `W`: expected image height and width
+- `THRESH`: sparsification threshold
+- `BACKBONE`: model preset, default `small`
+- `BATCH_SIZE`, `MAX_STEPS`, `VAL_FRACTION`, `VAL_EVERY`: training controls
+
+
+Smoke Checks
+------------
+
+Minimal checks that make sense outside the GPU cluster:
+
+    python3 check_local.py
+
+If the runtime dependencies are installed, you can also do:
+
+    source ./.setup.sh
+    python3 -c "import torch, uproot, MinkowskiEngine; print('imports ok')"
+
+That is still only an environment smoke test. The real runtime verification is a small Noether-side preprocessing or training run.
